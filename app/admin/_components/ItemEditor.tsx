@@ -8,6 +8,9 @@ import { uploadImageAction } from '../_actions/upload';
 type Props = {
   item: Item;
   onSaved: (updated: Item) => void;
+  canEditText: boolean;
+  canEditPrices: boolean;
+  canUploadImages: boolean;
 };
 
 function sizesToText(sizes: number[] | null): string {
@@ -20,7 +23,13 @@ function priceToText(price: number | null): string {
   return String(price).replace('.', ',');
 }
 
-export default function ItemEditor({ item, onSaved }: Props) {
+export default function ItemEditor({
+  item,
+  onSaved,
+  canEditText,
+  canEditPrices,
+  canUploadImages,
+}: Props) {
   const [imgUrl, setImgUrl] = useState<string>(item.img_url ?? '');
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -48,16 +57,42 @@ export default function ItemEditor({ item, onSaved }: Props) {
     const form = e.currentTarget;
     const fd = new FormData(form);
 
+    // ensure values for fields the user can't edit are sent unchanged
+    if (!canEditText) {
+      fd.set('name', item.name);
+      fd.set('description', item.description ?? '');
+      if (!fd.has('is_visible')) {
+        fd.set('is_visible', item.is_visible ? 'on' : '');
+      }
+    }
+    if (!canEditPrices) {
+      fd.set('price', priceToText(item.price));
+      fd.set('sizes', sizesToText(item.sizes));
+    }
+    if (!canUploadImages) {
+      fd.set('img_url', item.img_url ?? '');
+    }
+
     start(async () => {
       await updateItemAction(fd);
       onSaved({
         ...item,
-        name: String(fd.get('name') ?? item.name),
-        description: (fd.get('description') as string) || null,
-        price: parsePrice(String(fd.get('price') ?? '')),
-        sizes: parseSizes(String(fd.get('sizes') ?? '')),
-        img_url: String(fd.get('img_url') ?? '') || null,
-        is_visible: fd.get('is_visible') === 'on',
+        name: canEditText ? String(fd.get('name') ?? item.name) : item.name,
+        description: canEditText
+          ? (fd.get('description') as string) || null
+          : item.description,
+        price: canEditPrices
+          ? parsePrice(String(fd.get('price') ?? ''))
+          : item.price,
+        sizes: canEditPrices
+          ? parseSizes(String(fd.get('sizes') ?? ''))
+          : item.sizes,
+        img_url: canUploadImages
+          ? String(fd.get('img_url') ?? '') || null
+          : item.img_url,
+        is_visible: canEditText
+          ? fd.get('is_visible') === 'on'
+          : item.is_visible,
       });
     });
   };
@@ -77,99 +112,126 @@ export default function ItemEditor({ item, onSaved }: Props) {
             backgroundPosition: 'center',
           }}
         />
-        <div className="flex-1 space-y-2">
+        {canUploadImages ? (
+          <div className="flex-1 space-y-2">
+            <label className="block">
+              <span className="text-[11.5px] font-bold text-brand-inkSoft">
+                Imagem (URL ou upload)
+              </span>
+              <input
+                type="text"
+                value={imgUrl}
+                onChange={(e) => setImgUrl(e.target.value)}
+                placeholder="https://..."
+                className="mt-1 w-full rounded-xl border border-brand-line bg-white px-3 py-2 text-[12.5px] text-brand-ink outline-none focus:border-brand-orange"
+              />
+            </label>
+            <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-white px-3 py-2 text-[11.5px] font-bold text-brand-ink hover:bg-brand-line">
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) onUpload(f);
+                }}
+              />
+              {uploading ? 'Enviando…' : '📷 Subir foto'}
+            </label>
+            {uploadError ? (
+              <p className="text-[11.5px] font-bold text-brand-red">
+                {uploadError}
+              </p>
+            ) : null}
+          </div>
+        ) : (
+          <div className="flex-1 text-[11.5px] font-medium text-brand-inkSoft">
+            Você não tem permissão para trocar a foto.
+          </div>
+        )}
+      </div>
+
+      {canEditText ? (
+        <>
           <label className="block">
             <span className="text-[11.5px] font-bold text-brand-inkSoft">
-              Imagem (URL ou upload)
+              Nome
             </span>
             <input
-              type="text"
-              value={imgUrl}
-              onChange={(e) => setImgUrl(e.target.value)}
-              placeholder="https://..."
+              name="name"
+              defaultValue={item.name}
+              required
+              className="mt-1 w-full rounded-xl border border-brand-line bg-white px-3 py-2 text-[13.5px] font-medium text-brand-ink outline-none focus:border-brand-orange"
+            />
+          </label>
+
+          <label className="block">
+            <span className="text-[11.5px] font-bold text-brand-inkSoft">
+              Descrição
+            </span>
+            <input
+              name="description"
+              defaultValue={item.description ?? ''}
               className="mt-1 w-full rounded-xl border border-brand-line bg-white px-3 py-2 text-[12.5px] text-brand-ink outline-none focus:border-brand-orange"
             />
           </label>
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-white px-3 py-2 text-[11.5px] font-bold text-brand-ink hover:bg-brand-line">
-            <input
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) onUpload(f);
-              }}
-            />
-            {uploading ? 'Enviando…' : '📷 Subir foto'}
-          </label>
-          {uploadError ? (
-            <p className="text-[11.5px] font-bold text-brand-red">
-              {uploadError}
+        </>
+      ) : (
+        <div className="rounded-xl bg-white px-3 py-2">
+          <p className="text-[13.5px] font-bold text-brand-ink">{item.name}</p>
+          {item.description ? (
+            <p className="text-[12px] font-medium text-brand-inkSoft">
+              {item.description}
             </p>
           ) : null}
         </div>
-      </div>
+      )}
 
-      <label className="block">
-        <span className="text-[11.5px] font-bold text-brand-inkSoft">Nome</span>
-        <input
-          name="name"
-          defaultValue={item.name}
-          required
-          className="mt-1 w-full rounded-xl border border-brand-line bg-white px-3 py-2 text-[13.5px] font-medium text-brand-ink outline-none focus:border-brand-orange"
-        />
-      </label>
+      {canEditPrices ? (
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block">
+              <span className="text-[11.5px] font-bold text-brand-inkSoft">
+                Preço único (R$)
+              </span>
+              <input
+                name="price"
+                defaultValue={priceToText(item.price)}
+                placeholder="12,50"
+                inputMode="decimal"
+                className="mt-1 w-full rounded-xl border border-brand-line bg-white px-3 py-2 text-[13.5px] font-medium text-brand-ink outline-none focus:border-brand-orange"
+              />
+            </label>
+            <label className="block">
+              <span className="text-[11.5px] font-bold text-brand-inkSoft">
+                Tamanhos (P / G ou 1kg / 500g / 300g)
+              </span>
+              <input
+                name="sizes"
+                defaultValue={sizesToText(item.sizes)}
+                placeholder="33 / 55"
+                className="mt-1 w-full rounded-xl border border-brand-line bg-white px-3 py-2 text-[13.5px] font-medium text-brand-ink outline-none focus:border-brand-orange"
+              />
+            </label>
+          </div>
+          <p className="text-[10.5px] font-medium text-brand-inkSoft">
+            Use só um dos campos. Tamanhos: separe por vírgula, espaço ou /.
+          </p>
+        </>
+      ) : null}
 
-      <label className="block">
-        <span className="text-[11.5px] font-bold text-brand-inkSoft">
-          Descrição
-        </span>
-        <input
-          name="description"
-          defaultValue={item.description ?? ''}
-          className="mt-1 w-full rounded-xl border border-brand-line bg-white px-3 py-2 text-[12.5px] text-brand-ink outline-none focus:border-brand-orange"
-        />
-      </label>
-
-      <div className="grid grid-cols-2 gap-3">
-        <label className="block">
-          <span className="text-[11.5px] font-bold text-brand-inkSoft">
-            Preço único (R$)
-          </span>
+      {canEditText ? (
+        <label className="flex items-center gap-2">
           <input
-            name="price"
-            defaultValue={priceToText(item.price)}
-            placeholder="12,50"
-            inputMode="decimal"
-            className="mt-1 w-full rounded-xl border border-brand-line bg-white px-3 py-2 text-[13.5px] font-medium text-brand-ink outline-none focus:border-brand-orange"
+            type="checkbox"
+            name="is_visible"
+            defaultChecked={item.is_visible}
           />
-        </label>
-        <label className="block">
-          <span className="text-[11.5px] font-bold text-brand-inkSoft">
-            Tamanhos (P / G ou 1kg / 500g / 300g)
+          <span className="text-[12px] font-medium text-brand-ink">
+            Visível no cardápio
           </span>
-          <input
-            name="sizes"
-            defaultValue={sizesToText(item.sizes)}
-            placeholder="33 / 55"
-            className="mt-1 w-full rounded-xl border border-brand-line bg-white px-3 py-2 text-[13.5px] font-medium text-brand-ink outline-none focus:border-brand-orange"
-          />
         </label>
-      </div>
-      <p className="text-[10.5px] font-medium text-brand-inkSoft">
-        Use só um dos campos. Tamanhos: separe por vírgula, espaço ou /. Ex: 33 55 ou 190 / 105 / 75.
-      </p>
-
-      <label className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          name="is_visible"
-          defaultChecked={item.is_visible}
-        />
-        <span className="text-[12px] font-medium text-brand-ink">
-          Visível no cardápio
-        </span>
-      </label>
+      ) : null}
 
       <button
         type="submit"

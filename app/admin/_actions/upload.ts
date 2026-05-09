@@ -1,6 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
+import { getMyProfile, profileHas } from '@/lib/permissions';
 
 export type UploadResult =
   | { success: true; url: string }
@@ -9,12 +10,12 @@ export type UploadResult =
 export async function uploadImageAction(
   formData: FormData
 ): Promise<UploadResult> {
-  const supabase = createClient();
+  const me = await getMyProfile();
+  if (!profileHas(me, 'upload_images')) {
+    return { success: false, error: 'Sem permissão para subir fotos.' };
+  }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: 'Não autenticado.' };
+  const supabase = createClient();
 
   const file = formData.get('file');
   if (!(file instanceof File) || file.size === 0) {

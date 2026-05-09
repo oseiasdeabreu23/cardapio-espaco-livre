@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import { getMyProfile, profileHas } from '@/lib/permissions';
 
 function parseSizes(raw: string): number[] | null {
   const values = raw
@@ -21,6 +22,9 @@ function parsePrice(raw: string): number | null {
 }
 
 export async function createItemAction(formData: FormData) {
+  const me = await getMyProfile();
+  if (!profileHas(me, 'edit_item_text')) return;
+
   const supabase = createClient();
 
   const categoryId = String(formData.get('category_id') ?? '');
@@ -56,36 +60,59 @@ export async function createItemAction(formData: FormData) {
 }
 
 export async function updateItemAction(formData: FormData) {
+  const me = await getMyProfile();
+  const canText = profileHas(me, 'edit_item_text');
+  const canPrice = profileHas(me, 'edit_item_prices');
+  const canImage = profileHas(me, 'upload_images');
+  if (!canText && !canPrice && !canImage) return;
+
   const supabase = createClient();
 
   const id = String(formData.get('id') ?? '');
   const categoryId = String(formData.get('category_id') ?? '');
-  const name = String(formData.get('name') ?? '').trim();
-  const description = String(formData.get('description') ?? '').trim() || null;
-  const price = parsePrice(String(formData.get('price') ?? ''));
-  const sizes = parseSizes(String(formData.get('sizes') ?? ''));
-  const imgUrl = String(formData.get('img_url') ?? '').trim() || null;
-  const isVisible = formData.get('is_visible') === 'on';
-
   if (!id) return;
 
-  await supabase
+  // Load current row to ignore fields the user can't change
+  const { data: current } = await supabase
     .from('items')
-    .update({
-      name,
-      description,
-      price,
-      sizes,
-      img_url: imgUrl,
-      is_visible: isVisible,
-    })
-    .eq('id', id);
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (!current) return;
+
+  const updates: Record<string, unknown> = {};
+
+  if (canText) {
+    const name = String(formData.get('name') ?? '').trim();
+    const description =
+      String(formData.get('description') ?? '').trim() || null;
+    const isVisible = formData.get('is_visible') === 'on';
+    if (name) updates.name = name;
+    updates.description = description;
+    updates.is_visible = isVisible;
+  }
+
+  if (canPrice) {
+    updates.price = parsePrice(String(formData.get('price') ?? ''));
+    updates.sizes = parseSizes(String(formData.get('sizes') ?? ''));
+  }
+
+  if (canImage) {
+    updates.img_url = String(formData.get('img_url') ?? '').trim() || null;
+  }
+
+  if (Object.keys(updates).length === 0) return;
+
+  await supabase.from('items').update(updates).eq('id', id);
 
   if (categoryId) revalidatePath(`/admin/category/${categoryId}`);
   revalidatePath('/');
 }
 
 export async function deleteItemAction(formData: FormData) {
+  const me = await getMyProfile();
+  if (!profileHas(me, 'edit_item_text')) return;
+
   const supabase = createClient();
   const id = String(formData.get('id') ?? '');
   const categoryId = String(formData.get('category_id') ?? '');
@@ -98,6 +125,9 @@ export async function deleteItemAction(formData: FormData) {
 }
 
 export async function reorderItemsAction(formData: FormData) {
+  const me = await getMyProfile();
+  if (!profileHas(me, 'edit_item_text')) return;
+
   const supabase = createClient();
   const categoryId = String(formData.get('category_id') ?? '');
   const idsRaw = String(formData.get('ids') ?? '');

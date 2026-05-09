@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { signOutAction } from './_actions/auth';
-import { createClient } from '@/lib/supabase/server';
+import { getMyProfile, profileHas } from '@/lib/permissions';
 
 export const metadata = {
   title: 'Admin · Espaço Livre',
@@ -11,24 +11,33 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const me = await getMyProfile();
 
-  // Login page renders without header
-  if (!user) {
+  if (!me) {
     return <>{children}</>;
   }
 
   return (
     <div className="min-h-screen bg-brand-bg">
-      <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-brand-line bg-white px-5 py-3 shadow-thumb">
-        <Link href="/admin" className="text-[15px] font-extrabold text-brand-ink">
+      <header className="sticky top-0 z-20 flex flex-wrap items-center gap-2 border-b border-brand-line bg-white px-5 py-3 shadow-thumb">
+        <Link
+          href="/admin"
+          className="text-[15px] font-extrabold text-brand-ink"
+        >
           Admin · Espaço Livre
         </Link>
+        {profileHas(me, 'manage_users') ? (
+          <Link
+            href="/admin/users"
+            className="ml-3 rounded-full bg-brand-bg px-3 py-1 text-[11.5px] font-bold text-brand-ink hover:bg-brand-line"
+          >
+            Usuários
+          </Link>
+        ) : null}
         <span className="ml-auto truncate text-[11.5px] font-medium text-brand-inkSoft">
-          {user.email}
+          {me.display_name && me.display_name !== me.email
+            ? me.display_name
+            : me.email}
         </span>
         <form action={signOutAction}>
           <button

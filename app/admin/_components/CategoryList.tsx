@@ -11,9 +11,16 @@ import {
 type Props = {
   categories: Category[];
   counts: Record<string, number>;
+  canReorder: boolean;
+  canDelete: boolean;
 };
 
-export default function CategoryList({ categories: initial, counts }: Props) {
+export default function CategoryList({
+  categories: initial,
+  counts,
+  canReorder,
+  canDelete,
+}: Props) {
   const [items, setItems] = useState<Category[]>(initial);
   const [pending, start] = useTransition();
 
@@ -78,33 +85,39 @@ export default function CategoryList({ categories: initial, counts }: Props) {
             {counts[c.id] ?? 0}
           </span>
           <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => move(idx, -1)}
-              disabled={idx === 0 || pending}
-              className="rounded-md px-2 py-1 text-[14px] text-brand-inkSoft hover:bg-brand-bg disabled:opacity-30"
-              aria-label="Mover para cima"
-            >
-              ↑
-            </button>
-            <button
-              type="button"
-              onClick={() => move(idx, 1)}
-              disabled={idx === items.length - 1 || pending}
-              className="rounded-md px-2 py-1 text-[14px] text-brand-inkSoft hover:bg-brand-bg disabled:opacity-30"
-              aria-label="Mover para baixo"
-            >
-              ↓
-            </button>
-            <button
-              type="button"
-              onClick={() => onDelete(c.id, c.name)}
-              disabled={pending}
-              className="rounded-md px-2 py-1 text-[14px] text-brand-red hover:bg-brand-red/10"
-              aria-label="Apagar"
-            >
-              ✕
-            </button>
+            {canReorder ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => move(idx, -1)}
+                  disabled={idx === 0 || pending}
+                  className="rounded-md px-2 py-1 text-[14px] text-brand-inkSoft hover:bg-brand-bg disabled:opacity-30"
+                  aria-label="Mover para cima"
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  onClick={() => move(idx, 1)}
+                  disabled={idx === items.length - 1 || pending}
+                  className="rounded-md px-2 py-1 text-[14px] text-brand-inkSoft hover:bg-brand-bg disabled:opacity-30"
+                  aria-label="Mover para baixo"
+                >
+                  ↓
+                </button>
+              </>
+            ) : null}
+            {canDelete ? (
+              <button
+                type="button"
+                onClick={() => onDelete(c.id, c.name)}
+                disabled={pending}
+                className="rounded-md px-2 py-1 text-[14px] text-brand-red hover:bg-brand-red/10"
+                aria-label="Apagar"
+              >
+                ✕
+              </button>
+            ) : null}
           </div>
         </li>
       ))}

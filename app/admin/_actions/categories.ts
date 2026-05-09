@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import { getMyProfile, profileHas } from '@/lib/permissions';
 
 function slugify(input: string): string {
   return input
@@ -15,6 +16,9 @@ function slugify(input: string): string {
 }
 
 export async function createCategoryAction(formData: FormData) {
+  const me = await getMyProfile();
+  if (!profileHas(me, 'create_categories')) return;
+
   const supabase = createClient();
 
   const name = String(formData.get('name') ?? '').trim();
@@ -57,6 +61,9 @@ export async function createCategoryAction(formData: FormData) {
 }
 
 export async function updateCategoryAction(formData: FormData) {
+  const me = await getMyProfile();
+  if (!profileHas(me, 'create_categories')) return;
+
   const supabase = createClient();
 
   const id = String(formData.get('id') ?? '');
@@ -77,6 +84,9 @@ export async function updateCategoryAction(formData: FormData) {
 }
 
 export async function deleteCategoryAction(formData: FormData) {
+  const me = await getMyProfile();
+  if (!profileHas(me, 'delete_categories')) return;
+
   const supabase = createClient();
   const id = String(formData.get('id') ?? '');
   if (!id) return;
@@ -89,6 +99,9 @@ export async function deleteCategoryAction(formData: FormData) {
 }
 
 export async function reorderCategoriesAction(formData: FormData) {
+  const me = await getMyProfile();
+  if (!profileHas(me, 'create_categories')) return;
+
   const supabase = createClient();
   const idsRaw = String(formData.get('ids') ?? '');
   const ids = idsRaw.split(',').filter(Boolean);

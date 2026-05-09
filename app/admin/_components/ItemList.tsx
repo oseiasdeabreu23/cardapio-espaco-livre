@@ -11,12 +11,23 @@ import ItemEditor from './ItemEditor';
 type Props = {
   initial: Item[];
   categoryId: string;
+  canEditText: boolean;
+  canEditPrices: boolean;
+  canUploadImages: boolean;
 };
 
-export default function ItemList({ initial, categoryId }: Props) {
+export default function ItemList({
+  initial,
+  categoryId,
+  canEditText,
+  canEditPrices,
+  canUploadImages,
+}: Props) {
   const [items, setItems] = useState<Item[]>(initial);
   const [openId, setOpenId] = useState<string | null>(null);
   const [pending, start] = useTransition();
+
+  const canShowEditor = canEditText || canEditPrices || canUploadImages;
 
   const move = (idx: number, dir: -1 | 1) => {
     const next = [...items];
@@ -64,7 +75,11 @@ export default function ItemList({ initial, categoryId }: Props) {
           <div className="flex items-center gap-3 py-3">
             <div
               className="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-brand-bg"
-              style={{ backgroundImage: it.img_url ? `url(${it.img_url})` : undefined, backgroundSize: 'cover', backgroundPosition: 'center' }}
+              style={{
+                backgroundImage: it.img_url ? `url(${it.img_url})` : undefined,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
             />
             <div className="min-w-0 flex-1">
               <p className="truncate text-[13.5px] font-bold text-brand-ink">
@@ -75,48 +90,62 @@ export default function ItemList({ initial, categoryId }: Props) {
               </p>
             </div>
             <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => move(idx, -1)}
-                disabled={idx === 0 || pending}
-                className="rounded-md px-2 py-1 text-[14px] text-brand-inkSoft hover:bg-brand-bg disabled:opacity-30"
-                aria-label="Mover para cima"
-              >
-                ↑
-              </button>
-              <button
-                type="button"
-                onClick={() => move(idx, 1)}
-                disabled={idx === items.length - 1 || pending}
-                className="rounded-md px-2 py-1 text-[14px] text-brand-inkSoft hover:bg-brand-bg disabled:opacity-30"
-                aria-label="Mover para baixo"
-              >
-                ↓
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  setOpenId((curr) => (curr === it.id ? null : it.id))
-                }
-                className="rounded-full bg-brand-bg px-3 py-1 text-[11.5px] font-bold text-brand-ink hover:bg-brand-line"
-              >
-                {openId === it.id ? 'Fechar' : 'Editar'}
-              </button>
-              <button
-                type="button"
-                onClick={() => onDelete(it.id, it.name)}
-                disabled={pending}
-                className="rounded-md px-2 py-1 text-[14px] text-brand-red hover:bg-brand-red/10"
-                aria-label="Apagar"
-              >
-                ✕
-              </button>
+              {canEditText ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => move(idx, -1)}
+                    disabled={idx === 0 || pending}
+                    className="rounded-md px-2 py-1 text-[14px] text-brand-inkSoft hover:bg-brand-bg disabled:opacity-30"
+                    aria-label="Mover para cima"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => move(idx, 1)}
+                    disabled={idx === items.length - 1 || pending}
+                    className="rounded-md px-2 py-1 text-[14px] text-brand-inkSoft hover:bg-brand-bg disabled:opacity-30"
+                    aria-label="Mover para baixo"
+                  >
+                    ↓
+                  </button>
+                </>
+              ) : null}
+              {canShowEditor ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setOpenId((curr) => (curr === it.id ? null : it.id))
+                  }
+                  className="rounded-full bg-brand-bg px-3 py-1 text-[11.5px] font-bold text-brand-ink hover:bg-brand-line"
+                >
+                  {openId === it.id ? 'Fechar' : 'Editar'}
+                </button>
+              ) : null}
+              {canEditText ? (
+                <button
+                  type="button"
+                  onClick={() => onDelete(it.id, it.name)}
+                  disabled={pending}
+                  className="rounded-md px-2 py-1 text-[14px] text-brand-red hover:bg-brand-red/10"
+                  aria-label="Apagar"
+                >
+                  ✕
+                </button>
+              ) : null}
             </div>
           </div>
 
           {openId === it.id ? (
             <div className="rounded-2xl border border-brand-line bg-brand-bg p-4">
-              <ItemEditor item={it} onSaved={onSaved} />
+              <ItemEditor
+                item={it}
+                onSaved={onSaved}
+                canEditText={canEditText}
+                canEditPrices={canEditPrices}
+                canUploadImages={canUploadImages}
+              />
             </div>
           ) : null}
         </li>
