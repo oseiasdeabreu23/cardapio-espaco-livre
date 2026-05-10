@@ -1,6 +1,6 @@
 import Image from 'next/image';
 
-export default function Hero() {
+export default function Hero({ isOpen = true }: { isOpen?: boolean }) {
   return (
     <header
       className="relative overflow-hidden rounded-b-hero px-5 pb-7 pt-[max(env(safe-area-inset-top),20px)] text-white"
@@ -39,11 +39,20 @@ export default function Hero() {
             border: '1px solid rgba(255,255,255,0.28)',
           }}
         >
-          <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-pulseDot rounded-full bg-brand-green opacity-80" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-green" />
-          </span>
-          Aberto agora
+          {isOpen ? (
+            <>
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-pulseDot rounded-full bg-brand-green opacity-80" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-brand-green" />
+              </span>
+              Aberto agora
+            </>
+          ) : (
+            <>
+              <span className="inline-flex h-2 w-2 rounded-full bg-white/80" />
+              Fechado agora
+            </>
+          )}
         </div>
       </div>
 

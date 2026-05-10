@@ -13,7 +13,7 @@ export default async function Page() {
       {!settings.is_open ? (
         <ClosedBanner message={settings.closed_message} />
       ) : null}
-      <Hero />
+      <Hero isOpen={settings.is_open} />
       <MenuView categories={menu} />
       <footer className="px-5 pb-10 pt-6 text-center text-[11px] font-medium text-brand-inkSoft">
         ✦ Espaço Livre · Churrascaria &amp; Pizzaria ✦
