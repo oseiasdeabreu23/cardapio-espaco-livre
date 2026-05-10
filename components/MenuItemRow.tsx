@@ -1,7 +1,6 @@
 import Image from 'next/image';
 import type { MenuItem } from '@/lib/menu';
 import PriceBadge from './PriceBadge';
-import ExpandableDescription from './ExpandableDescription';
 
 const formatBRL = (n: number) =>
   n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -16,7 +15,11 @@ export default function MenuItemRow({ item }: { item: MenuItem }) {
         <h3 className="text-[14.5px] font-bold uppercase leading-tight tracking-wide text-brand-ink">
           {item.name}
         </h3>
-        {item.desc ? <ExpandableDescription text={item.desc} /> : null}
+        {item.desc ? (
+          <p className="line-clamp-1 mt-0.5 text-[11.5px] font-medium text-brand-inkSoft">
+            {item.desc}
+          </p>
+        ) : null}
 
         <div className="mt-2 flex flex-wrap items-center gap-1.5">
           {item.sizes ? (
