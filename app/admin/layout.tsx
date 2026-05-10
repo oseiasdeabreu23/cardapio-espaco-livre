@@ -34,6 +34,14 @@ export default async function AdminLayout({
             Usuários
           </Link>
         ) : null}
+        {me.is_owner ? (
+          <Link
+            href="/admin/backup"
+            className="rounded-full bg-brand-bg px-3 py-1 text-[11.5px] font-bold text-brand-ink hover:bg-brand-line"
+          >
+            Backup
+          </Link>
+        ) : null}
         <span className="ml-auto truncate text-[11.5px] font-medium text-brand-inkSoft">
           {me.display_name && me.display_name !== me.email
             ? me.display_name
