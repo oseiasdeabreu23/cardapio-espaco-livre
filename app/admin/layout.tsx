@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { signOutAction } from './_actions/auth';
 import { getMyProfile, profileHas } from '@/lib/permissions';
+import { APP_VERSION } from '@/lib/version';
 
 export const metadata = {
   title: 'Admin · Espaço Livre',
@@ -22,9 +23,12 @@ export default async function AdminLayout({
       <header className="sticky top-0 z-20 flex flex-wrap items-center gap-2 border-b border-brand-line bg-white px-5 py-3 shadow-thumb">
         <Link
           href="/admin"
-          className="text-[15px] font-extrabold text-brand-ink"
+          className="flex items-baseline gap-1.5 text-[15px] font-extrabold text-brand-ink"
         >
           Admin · Espaço Livre
+          <span className="font-mono text-[10.5px] font-bold text-brand-inkSoft">
+            v{APP_VERSION}
+          </span>
         </Link>
         {profileHas(me, 'manage_users') ? (
           <Link
@@ -40,6 +44,14 @@ export default async function AdminLayout({
             className="rounded-full bg-brand-bg px-3 py-1 text-[11.5px] font-bold text-brand-ink hover:bg-brand-line"
           >
             Backup
+          </Link>
+        ) : null}
+        {me.is_owner ? (
+          <Link
+            href="/admin/license"
+            className="rounded-full bg-brand-bg px-3 py-1 text-[11.5px] font-bold text-brand-ink hover:bg-brand-line"
+          >
+            Licença
           </Link>
         ) : null}
         <span className="ml-auto truncate text-[11.5px] font-medium text-brand-inkSoft">

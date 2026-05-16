@@ -3,10 +3,27 @@ import type { MenuItem } from '@/lib/menu';
 import PriceBadge from './PriceBadge';
 import ExpandableDescription from './ExpandableDescription';
 
+const ALLOWED_IMAGE_HOSTS = new Set([
+  'images.unsplash.com',
+  'live.staticflickr.com',
+  'wxhqhyavwgjcqiolokzp.supabase.co',
+]);
+
+function isSafeImageUrl(url: string): boolean {
+  if (!url) return false;
+  try {
+    const u = new URL(url);
+    return u.protocol === 'https:' && ALLOWED_IMAGE_HOSTS.has(u.hostname);
+  } catch {
+    return false;
+  }
+}
+
 const formatBRL = (n: number) =>
   n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 
 export default function MenuItemRow({ item }: { item: MenuItem }) {
+  const showImage = isSafeImageUrl(item.img);
   return (
     <article
       className="flex items-start gap-3 py-3"
@@ -43,17 +60,26 @@ export default function MenuItemRow({ item }: { item: MenuItem }) {
       </div>
 
       <div
-        className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl bg-white shadow-thumb"
+        className="relative flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-brand-bg shadow-thumb"
         style={{ border: '2px solid #FFFFFF' }}
       >
-        <Image
-          src={item.img}
-          alt={item.name}
-          fill
-          loading="lazy"
-          sizes="64px"
-          className="object-cover"
-        />
+        {showImage ? (
+          <Image
+            src={item.img}
+            alt={item.name}
+            fill
+            loading="lazy"
+            sizes="64px"
+            className="object-cover"
+          />
+        ) : (
+          <span
+            aria-hidden
+            className="text-xl font-extrabold text-brand-inkSoft"
+          >
+            {item.name.charAt(0).toUpperCase()}
+          </span>
+        )}
       </div>
     </article>
   );
